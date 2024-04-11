@@ -1,0 +1,65 @@
+structure pointer_t                {ptr: pointer to node_t, count: unsigned integer}
+structure node_t                  {value: data type, next: point_t, slide: boolean }
+structure queue_t                 {Head: pointer_t, Tail: pointer_t}
+
+initialize(Q: pointer to queue_t)
+  node = new_node()
+node->next.ptr = NULL
+node->slide = true
+Q->Head = Q->Tail = <node, 0>
+
+Enqueue(Q: pointer to queue_t , value : refer to data type)
+E1:  node = new_node()
+E2:  node->value = value
+E3:  node->next.ptr = NULL
+E4:  node->slide = false
+E5:  loop
+E6:      tail = Q->Tail
+E7:      next = tail.ptr->next
+E8:      if tail == Q->tail
+E9:          if next.ptr == NULL
+E10:             if CAS(&tail.ptr->next, next, <node, next.count+1>)
+E11:                 break
+E12:             endif
+E13:         else
+E14:             CAS(&Q->Tail, tail, <next.ptr, tail.count + 1>)
+E15:         endif
+E16:     endif
+E17:  endloop
+E18:  CAS(&Q->Tail, tail, <node, tail.count+1>)
+
+
+Dequeue(Q: pointer to queue_t , value : refer to data type): boolean
+D1:  loop
+D2:      head=Q->Head
+D3:      tail = Q->Tail
+D4:      next = head->next
+D5:      if head == Q->Head
+D6:         if head.ptr == tail.ptr
+D7:             if next.ptr == NULL && head.ptr->slide == TRUE #头部是滑动指针
+D8:                 return FALSE
+D9:             else if next.ptr != NULL
+D10:                CAS(&Q->Tail, tail, <next.ptr, tail.count + 1>)
+D11:            else                                      #队列尾部有数据
+D12:                slide_node = new_node()                #创建活动指针推出数据
+D13:                slide_node->slide = TRUE
+D14:                if (CAS(&tail.ptr->next, next, <slide_node, next.count+1> #推入成功
+D15:                    CAS(&Q->Tail, tail, < slide_node, tail.count + 1>    #更新队尾
+D16:                else
+D17:                    free(splid_node)                   #未推成功释放滑动指针
+D18:                endif
+D19:             endif
+D20:         else
+D21:             if CAS(&Q->Head, head, <next.ptr, head.count + 1>)
+D22:                 if head.ptr->slide == TRUE     #取出的数据是滑动指针
+D23:                     free(head.ptr)             #释放滑动指针
+D24:                     continue                 #继续取下一节点
+D25:                 endif
+D26:                 break
+D27:              endif
+D28:         endif
+D29:      endif
+D30:  endloop
+D31:  value = move(head.ptr->value)
+D32:  free(head.ptr)
+D33:  return TRUE
