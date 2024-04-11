@@ -7,3 +7,5 @@ A Lockless Queue Algorithm and Implementation
 ![Uploading image.png…]()
 
 该算法在dequeue函数D12行的赋值语句是不安全的，可能出现悬置指针访问。
+
+基于C++11的实现晚点放上来。
